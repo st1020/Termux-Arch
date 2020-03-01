@@ -22,7 +22,7 @@ pkg i -y wget && bash -c "$(wget -qO- 'https://github.com/st1020/Termux-Arch/raw
 ```
 或者：
 ```shell
-pkg i -y wget && bash -c "$(wget -qO- 'https://gitee.com/st1020/Termux-Arch/raw/master/st.sh')"
+pkg i -y wget && bash -c "$(wget -qO- 'https://gitee.com/st1020/Termux-Arch/raw/master/Arch.sh')"
 ```
 
 ## 使用
@@ -39,6 +39,6 @@ pkg i -y wget && bash -c "$(wget -qO- 'https://gitee.com/st1020/Termux-Arch/raw/
 
 ## 开源许可
 
-本脚本有st1020移植自 [Moe/Termux-Debian项目](https://gitee.com/mo2/Termux-Debian)。 
+本脚本由st1020移植自 [Moe/Termux-Debian项目](https://gitee.com/mo2/Termux-Debian)。 
 
 本脚本根据GNU General Public License, version 3 (GPL-3.0)开放源代码。
