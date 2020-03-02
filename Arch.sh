@@ -150,6 +150,10 @@ elif [ \$1 == "vnc" ] ;then
 	am start -n com.realvnc.viewer.android/com.realvnc.viewer.android.app.ConnectionChooserActivity
 	touch ~/${ArchFolder}/root/.vnc/startvnc
 	startarch
+elif [ \$1 == "xsdl" ] ;then
+	am start -n x.org.server/x.org.server.MainActivity
+	touch ~/${ArchFolder}/root/.vnc/startxsdl
+	startarch
 elif [ \$1 == "stopvnc" ] ;then
 	pkill -u \$(whoami)
 elif [ \$1 == "help" ] ;then
@@ -373,12 +377,13 @@ main(){
 	echo -e "     Arch Linux for Termux管理工具\n\n"
 	echo -e "   1   启动VNC服务\n"
 	echo -e "   2   停止VNC服务\n"
-	echo -e "   3   安装Xfce桌面环境\n"
-	echo -e "   4   安装LXQt桌面环境\n"
-	echo -e "   5   安装LXDE桌面环境\n"
-	echo -e "   6   安装i3窗口管理器\n"
-	echo -e "   7   配置OpenBox窗口管理器\n"
-	echo -e "   8   卸载图形界面\n"
+	echo -e "   3   启动XSDL服务\n"
+	echo -e "   4   安装Xfce桌面环境\n"
+	echo -e "   5   安装LXQt桌面环境\n"
+	echo -e "   6   安装LXDE桌面环境\n"
+	echo -e "   7   安装i3窗口管理器\n"
+	echo -e "   8   配置OpenBox窗口管理器\n"
+	echo -e "   9   卸载图形界面\n"
 	echo -e "   0   退出\n"
 	read -p '请输入序号：' OPTION;
 	if [ "${OPTION}" == '1' ]; then
@@ -386,17 +391,19 @@ main(){
 	elif [ "${OPTION}" == '2' ]; then
 		stopvnc
 	elif [ "${OPTION}" == '3' ]; then
-		install xfce4 startxfce4
+		startxsdl
 	elif [ "${OPTION}" == '4' ]; then
-		install lxqt startlxqt
+		install xfce4 startxfce4
 	elif [ "${OPTION}" == '5' ]; then
-		install lxde startlxde
+		install lxqt startlxqt
 	elif [ "${OPTION}" == '6' ]; then
+		install lxde startlxde
+	elif [ "${OPTION}" == '7' ]; then
 		echo "i3只是窗口管理器，需要您自行配置和安装其他必须的软件"
 		echo "在安装后，如不进行配置，将仅显示一个黑屏，若屏幕最底部有状态栏，证明安装成功"
 		read -p "请按任意键继续..." input
 		install i3 i3
-	elif [ "${OPTION}" == '7' ]; then
+	elif [ "${OPTION}" == '8' ]; then
 		echo "OpenBox只是窗口管理器，需要您自行配置和安装其他必须的软件"
 		echo "在安装后，如不进行配置，将仅显示一个黑屏，单击鼠标右键（两指点击屏幕）确认有菜单出现，证明安装成功"
 		read -p "请按任意键继续..." input
@@ -404,7 +411,7 @@ main(){
 		mkdir -p ~/.config/openbox
 		cp -a /etc/xdg/openbox/. ~/.config/openbox/
 		install openbox openbox-session
-	elif [ "${OPTION}" == '8' ]; then
+	elif [ "${OPTION}" == '9' ]; then
 		read -p "请输入要卸载的桌面环境（如xfce）：" remove
 		remove $remove
 	elif [ "${OPTION}" == '0' ]; then
@@ -426,12 +433,44 @@ startvnc(){
 	echo 局域网地址 $(ip -4 -br -c a |tail -n 1 |cut -d '/' -f 1 |cut -d 'P' -f 2):5901
 }
 
+startxsdl(){
+	stopvnc
+	export DISPLAY=127.0.0.1:0
+	export PULSE_SERVER=tcp:127.0.0.1:4712
+	echo '正在为您启动xsdl，请将display number改为0'
+	echo '默认为前台运行，您可以按Ctrl+C终止，或者在termux原系统内输入，arch stopvnc'
+	#判断时一定要把openbox-session放在startlxqt后，因为LXQt会默认安装OpenBox
+	if [ -e /usr/bin/startxfce4 ]; then
+		startxfce4
+	elif [ -e /usr/bin/startlxqt ]; then
+		startlxqt
+	elif [ -e /usr/bin/startlxde ]; then
+		startlxde
+	elif [ -e /usr/bin/openbox-session ]; then
+		openbox-session
+	elif [ -e /usr/bin/i3 ]; then
+		i3
+	else
+		echo "未检测到支持的桌面环境！"
+	fi
+}
+
 stopvnc(){
 	export USER=root
 	export HOME=/root
 	vncserver -kill :1
 	pkill Xvnc
 	rm -rf /tmp/.X1*
+}
+
+xsdl-4712(){
+	stopvnc
+	sed -i 's/:4713/:4712/g' /usr/local/bin/arch
+}
+
+xsdl-4713(){
+	stopvnc
+	sed -i 's/:4712/:4713/g' /usr/local/bin/arch
 }
 
 install(){
@@ -456,6 +495,8 @@ echo '如果提示view-only，那么建议您输n，选择权在您自己的手�
 echo '请输入6至8位密码'
 startvnc
 echo '您之后可以在Arch Linux或者Termux中输入 arch vnc 启动vnc服务，输入 arch stopvnc 停止'
+echo '您还可以在Arch Linux或者Termux中输入arch xsdl来启动xsdl，按Ctrl+C或在Termux中输入 arch stopvnc 停止进程'
+echo '若xsdl音频端口不是4712，而是4713，则请输 arch xsdl-4713 进行修复'
 }
 
 remove(){
@@ -484,6 +525,12 @@ elif [ $1 == "boot" ] ;then
 		rm -f /root/.vnc/startvnc
 		startvnc
 		echo "已为您启动vnc服务"
+	elif [ -f "/root/.vnc/startxsdl" ]; then
+		echo '检测到你从Termux中输入了 arch startxsdl ，已为您打开XSDL安卓APP'
+		rm -f /root/.vnc/startxsdl
+		echo '9s后将为您启动XSDL'
+		sleep 9
+		startxsdl
 	fi
 elif [ $1 == "install" ]; then
 	if [ -z $2 ];then
@@ -516,8 +563,14 @@ elif [ $1 == "vnc" ]; then
 	startvnc
 elif [ $1 == "stopvnc" ]; then
 	stopvnc
+elif [ $1 == "xsdl" ]; then
+	startxsdl
+elif [ $1 == "xsdl-4712" ]; then
+	xsdl-4712
+elif [ $1 == "xsdl-4713" ]; then
+	xsdl-4713
 elif [ $1 == "help" ]; then
-	echo -e "arch - 打开管理菜单\narch vnc - 启动VNC服务\narch stopvnc - 停止VNC服务\narch install (桌面环境) - 安装选择的桌面环境\narch remove (桌面环境) - 卸载选择的桌面环境"
+	echo -e "arch - 打开管理菜单\narch vnc - 启动VNC服务\narch stopvnc - 停止VNC服务\narch install (桌面环境) - 安装选择的桌面环境\narch remove (桌面环境) - 卸载选择的桌面环境\narch xsdl-4713 - 切换XSDL端口为4713\narch xsdl-4712 - 切换XSDL端口为4712"
 else
 	echo "参数错误！"
 fi
